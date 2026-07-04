@@ -156,7 +156,17 @@ document.addEventListener('mouseup', function(e) {
     p = new P(e.clientX, e.clientY);
     lines.push(new L(point, p));
 });
-
+document.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    e = e.targetTouches[0];
+    point = new P(e.pageX, e.pageY);
+});
+document.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    e = e.targetTouches[0];
+    p = new P(e.pageX, e.pageY);
+    lines.push(new L(point, p));
+});
 
 function init() {
     ball = new Ball(10);
