@@ -167,6 +167,9 @@ document.addEventListener('touchend', function(e) {
     p = new P(e.pageX, e.pageY);
     lines.push(new L(point, p));
 });
+document.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+}
 
 function init() {
     ball = new Ball(10);
