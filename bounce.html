@@ -1,0 +1,212 @@
+<html><body>
+<title>Bounce</title>
+<style>
+html, body { width: 100%; height: 100%; margin: 0; }
+</style>
+<canvas id="board"></canvas>
+<script>
+var canvas = document.getElementById("board");
+var ctx = canvas.getContext("2d");
+
+function rand(n) { return Math.floor(Math.random()*n); }
+function nzsr(n) {
+    var x = Math.floor(Math.random()*n*2)-n;
+    if (x == 0) return nzsr(n);
+    else return x;
+}
+
+function P(x,y) { this.x = x; this.y = y; }
+function L(a,b) { this.a = a; this.b = b; }
+
+function pa(a,b) { return new P(a.x+b.x, a.y+b.y); }
+function pt(a,t) { return new P(a.x*t, a.y*t); }
+function pm(a) { return new P(-a.x, -a.y); }
+function dot(a,b) { return a.x*b.x + a.y*b.y; }
+function vec(x) { return new P(x.b.x-x.a.x, x.b.y-x.a.y); }
+
+function norm(x) {
+    return Math.sqrt(dot(x,x));
+}
+
+function normalize(x) {
+    return pt(x, 1/norm(x));
+}
+
+function normal(x) {
+    return normalize(new P(x.a.y-x.b.y, x.b.x-x.a.x));
+}
+
+function collides(ball, x) {
+    var d, f;
+    var a, b, c;
+    var k, m, n;
+
+    d = pa(x.b, pm(x.a));
+    f = pa(x.a, pm(ball.c));
+
+    a = dot(d,d);
+    b = 2*dot(f,d);
+    c = dot(f,f)-ball.r*ball.r;
+
+    k = b*b-4*a*c;
+    if (k < 0) return false;
+
+    k = Math.sqrt(k);
+    m = (-b-k)/(2*a);
+    n = (-b+k)/(2*a);
+
+    if (m >= 0 && m <= 1) return true;
+    if (n >= 0 && n <= 1) return true;
+
+    return false;
+}
+
+function reflect(d, n) {
+    n = normal(n);
+    return pa(d, pm(pt(n, 2*dot(d,n))));
+}
+
+var lines;
+var borders;
+
+function reset() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.canvas.width = window.innerWidth;
+    ctx.canvas.height = window.innerHeight;
+    borders = [
+        new L(new P(0,0), new P(0,canvas.height)),
+        new L(new P(0,canvas.height), new P(canvas.width,canvas.height)),
+        new L(new P(canvas.width,canvas.height), new P(canvas.width,0)),
+        new L(new P(canvas.width,0), new P(0,0)),
+    ];
+}
+
+function Ball(rad) {
+    this.c = new P(rand(canvas.width), rand(canvas.height));
+    this.dc = new P(nzsr(7), nzsr(7));
+    this.r = rad;
+}
+
+var ball;
+var goal;
+
+function drawBall(ball) {
+    ctx.beginPath();
+    ctx.arc(ball.c.x, ball.c.y, ball.r, 0, Math.PI*2);
+    ctx.fillStyle = "000000";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawLine(line) {
+    ctx.beginPath();
+    ctx.moveTo(line.a.x, line.a.y);
+    ctx.lineTo(line.b.x, line.b.y);
+    ctx.fillStyle = "000000";
+    ctx.stroke();
+    ctx.closePath();
+}
+
+function drawLines(lines) {
+    lines.forEach(drawLine);
+}
+
+var score, tick, max;
+
+function drawScore() {
+    ctx.beginPath();
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "000000";
+    ctx.fillText(score, 8, 20);
+    var d = (max > 10) ? 24 : 16;
+    ctx.fillText(max, canvas.width-d, 20);
+    ctx.closePath();
+}
+
+function draw(ball, lines) {
+    drawBall(ball);
+    drawBall(goal);
+    drawScore();
+    drawLines(lines);
+}
+
+function updateBall(ball, lines) {
+    ball.c = pa(ball.c, ball.dc);
+
+    lines.forEach(function(x) {
+        if (collides(ball, x)) {
+            ball.dc = reflect(ball.dc, x);
+            ball.c = pa(ball.c, ball.dc);
+        }
+    });
+
+    return ball;
+}
+
+function update(ball, lines) {
+    ball = updateBall(ball, lines);
+    return ball;
+}
+
+var point;
+document.addEventListener('mousedown', function(e) {
+    point = new P(e.clientX, e.clientY);
+});
+document.addEventListener('mouseup', function(e) {
+    p = new P(e.clientX, e.clientY);
+    lines.push(new L(point, p));
+});
+
+
+function init() {
+    ball = new Ball(10);
+    goal = new Ball(3);
+    lines = [];
+    borders = [];
+    tick = 0;
+}
+
+function dist(a,b) {
+    return Math.sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y));
+}
+
+function end() {
+    return (ball.r+goal.r) >= dist(ball.c, goal.c);
+}
+
+function scoring() {
+    if (end()) {
+        score++;
+        init();
+    }
+
+    if (score < 0) {
+        score = 0;
+        init();
+    }
+
+    if (score >= 0 && tick >= 1000*Math.exp(-score)) {
+        score--;
+    }
+
+    if (max < score) max = score;
+
+    tick++;
+
+    console.log(tick);
+}
+
+function game() {
+    reset();
+    draw(ball, lines);
+    ball = update(ball, borders.concat(lines));
+    scoring();
+    requestAnimationFrame(game);
+}
+
+score = 0;
+max = 0;
+init();
+game();
+</script>
+</body></html>
