@@ -159,12 +159,12 @@ document.addEventListener('mouseup', function(e) {
 document.addEventListener('touchstart', function(e) {
     e.preventDefault();
     e = e.targetTouches[0];
-    point = new P(e.pageX, e.pageY);
+    point = new P(e.clientX, e.clientY);
 });
 document.addEventListener('touchend', function(e) {
     e.preventDefault();
     e = e.targetTouches[0];
-    p = new P(e.pageX, e.pageY);
+    p = new P(e.clientX, e.clientY);
     lines.push(new L(point, p));
 });
 document.addEventListener('touchmove', function(e) {
